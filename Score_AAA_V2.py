@@ -13,6 +13,7 @@ with st.sidebar:
         mdp=st.text_input(label="Mot de passe", value="Go4thsas",type="password")
         cas_host ='https://d40184.frafed-wv1-azure-nginx-e111fd2c.unx.sas.com/cas-shared-default-http/'
         cas_port= 80
+        s.sessionprop.setsessopt(caslib='Public',timeout=31536000)
         st.header("Sélection du fichier")
         path=st.file_uploader(label="Parcourir")
         submitted = st.form_submit_button("Exécuter")
