@@ -11,9 +11,8 @@ with st.sidebar:
         st.header("Connection")
         user=st.text_input(label="Nom d'utilisateur", value="sastest1")
         mdp=st.text_input(label="Mot de passe", value="Go4thsas",type="password")
-        cas_host ='https://d40184.frafed-wv1-azure-nginx-e111fd2c.unx.sas.com/cas-shared-default-http/'
+        cas_host ='https://aaa2021.frafed-yl1-azure-nginx-ceafe719.unx.sas.com/cas-shared-default-http/'
         cas_port= 80
-        
         st.header("Sélection du fichier")
         path=st.file_uploader(label="Parcourir")
         submitted = st.form_submit_button("Exécuter")
@@ -21,12 +20,15 @@ with st.sidebar:
         st.number_input(label="Nombre de lignes en sortie")
         if submitted:
             s = swat.CAS(cas_host, cas_port, user, mdp)
+            print(s)
             df=pd.read_csv(path)
             s.upload_frame(df,casout={'name':'totrain','caslib':'CASUSER','replace':True})
             s.sessionprop.setsessopt(caslib='Public',timeout=31536000)
             indata="BAL_LYON_MATCHED"
+            print(indata)
             outdata="BAL_TOULON"
             op = s.table.loadTable(path=str(indata).upper()+".sashdat", casout={"name":indata, "replace":True})
+            print(op)
             op2 = s.table.loadTable(path=str(outdata).upper()+".sashdat", casout={"name":outdata, "replace":True})
             s.datastep.runcode('data '+outdata+'_MATCHED;set '+outdata+';voie_nom_match=dqmatch ("voie_nom"n, "Address (Street Only)", 90, "FRFRA");run;')
             s.builtins.loadActionSet("fedSql")
@@ -34,9 +36,15 @@ with st.sidebar:
             select distinct t1.*,t2.voie_nom as voie_nom_1
             from '''+indata+''' t1 left join '''+outdata+'''_MATCHED t2 on t1.voie_nom_match=t2.voie_nom_match  ''')
             inmodel=s.datastep.runcode('data INMODEL;set INMODEL;if missing(voie_nom_1) then CIBLE=0; else CIBLE=1;run; ')
-            view=s.datastep.runcode('data VIEWMODEL;set INMODEL;if CIBLE=1;run; ')
-            viewdf=s.CASTable('INMODEL').to_frame()
-            st.table(viewdf.head())
-            
+            print(inmodel)
+            viewdf=s.CASTable('INMODEL').nlargest(n=5,columns=['CIBLE'])
 
+try:
+    st.table(viewdf)
+    print('ON EST LES CHAMPIONS')
+except:
+    print('ERROR')
+    
+    
+s.terminate()
             
