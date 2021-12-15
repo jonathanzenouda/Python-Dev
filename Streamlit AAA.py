@@ -66,7 +66,7 @@ with st.sidebar:
 
 try:
     st.table(viewdf)
-    fig = px.bar(pipelinedf, x='PIPELINE', y='AUC',orientation='h')
+    fig = px.bar(pipelinedf, x='AUC', y='PIPELINE',orientation='h')
     st.plotly_chart(fig, use_container_width=True)
 
     st.table(featdf)
