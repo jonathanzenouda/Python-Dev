@@ -9,9 +9,9 @@ st.title("Interface de scoring Look-a-like")
 with st.sidebar:
     with st.form("my_form"):
         st.header("Connection")
-        user=st.text_input(label="Nom d'utilisateur", value="sasadm")
-        mdp=st.text_input(label="Mot de passe", value="Go4thsas",type="password")
-        cas_host ='https://aaa2021.frafed-yl1-azure-nginx-ceafe719.unx.sas.com/cas-shared-default-http/'
+        user=st.text_input(label="Nom d'utilisateur", value="frajoz")
+        mdp=st.text_input(label="Mot de passe", value="y42tCohuVh4D",type="password")
+        cas_host ='https://viyawaves.sas.com/cas-shared-default-http/'
         cas_port= 80
         st.header("Sélection du fichier")
         path=st.file_uploader(label="Parcourir")
