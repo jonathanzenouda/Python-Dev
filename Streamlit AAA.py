@@ -4,15 +4,14 @@ import swat
 from getpass import getpass
 import streamlit as st
 import plotly.express as px
-
 st.title("Interface de scoring Look-a-like")
 
 with st.sidebar:
     with st.form("my_form"):
         st.header("Connection")
-        user=st.text_input(label="Nom d'utilisateur", value="frajoz")
-        mdp=st.text_input(label="Mot de passe", value="y42tCohuVh4D",type="password")
-        cas_host ='https://viyawaves.sas.com/cas-shared-default-http/'
+        user=st.text_input(label="Nom d'utilisateur", value="sasadm")
+        mdp=st.text_input(label="Mot de passe", value="Go4thsas",type="password")
+        cas_host ='https://aaa2021.frafed-yl1-azure-nginx-ceafe719.unx.sas.com/cas-shared-default-http/'
         cas_port= 80
         st.header("Sélection du fichier")
         path=st.file_uploader(label="Parcourir")
@@ -20,7 +19,7 @@ with st.sidebar:
         var_match=st.text_input(label="Variable à matcher",value="voie_nom")
         type_match=st.selectbox(label="Type de match",options=("Address (Street Only)","Address","Name","Account Number","Date (DMY)","Date (YMD)","Date (MDY)","Organization","Phone","Text"))
         st.header("AutoML")
-        st.number_input(label="Nombre de lignes en sortie")
+        nb=st.number_input(label="Nombre de lignes en sortie",value=100)
         submitted = st.form_submit_button("Exécuter")
         if submitted:
             s = swat.CAS(cas_host, cas_port, user, mdp)
@@ -59,17 +58,37 @@ with st.sidebar:
                             pipelineOut = pipeline_out,
                             objective='AUC',
                             saveState = automl_model)
-            s.datastep.runcode('data pipeline_graph;set pipeline_out;PIPELINE=PipelineID||"_"||modelType;keep PIPELINE Objective;rename Objective=AUC;run;')
+            s.datastep.runcode('data pipeline_graph;set pipeline_out;PIPELINE=PipelineID||"_"||MLType||"_nbfeat:"||put(NFeatures,$4.);keep PIPELINE Objective;rename Objective=AUC;run;')
             pipelinedf=s.CASTable('pipeline_graph').nlargest(n=10,columns=['AUC'])
             featdf=s.CASTable('feat_out').nlargest(n=10,columns=['FeatureId'])
             print('AutoML done')
+            
+
+            # Load modelPublishing action set
+            s.loadactionset('modelPublishing')
+
+            # Score Model in CAS
+            s.modelPublishing.runModelLocal(
+                modelName="GradientBoosting_0add20ae20a44b2984c2dc03e969dcf7",                   # Model Name
+                modelTable={"caslib":"Casuser","name":"sas_model_table"},    # CAS destination
+                intable={"name":"CH_APPRENT_READY"},           # Input Table
+                outTable={"name":"SCORE"})        # Output Table
+            larg=s.CASTable('SCORE').nlargest(n=100,columns=['EM_EVENTPROBABILITY'])
 
 try:
+    if s.table.tableExists(indata):
+        st.header("Réconciliation effectuée")
     st.table(viewdf)
     fig = px.bar(pipelinedf, x='AUC', y='PIPELINE',orientation='h')
+    
+    st.header("Meilleurs pipelines après AutoML")
     st.plotly_chart(fig, use_container_width=True)
 
+    st.header("Meilleures transformations après AutoML")
     st.table(featdf)
+    
+    st.header("Plus proches clients")
+    st.table(larg)
     print('ON EST LES CHAMPIONS')
     
     s.terminate()
